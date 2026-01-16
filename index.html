@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<title>Volleyball Scoreboard</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<style>
+* {
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  background: #000;
+  color: #fff;
+  font-family: system-ui, -apple-system;
+  overflow: hidden;
+}
+
+/* ===== Top Bar ===== */
+.topbar {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  background: linear-gradient(#111, #000);
+}
+
+.sets button {
+  margin-right: 6px;
+  padding: 6px 12px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: none;
+  background: #334155;
+  color: #fff;
+}
+
+.sets .active {
+  background: #facc15;
+  color: #000;
+  font-weight: bold;
+}
+
+.actions {
+  margin-left: auto;
+}
+
+.actions button {
+  margin-left: 6px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: none;
+  background: #38bdf8;
+  font-size: 14px;
+}
+
+/* ===== Court ===== */
+.court {
+  display: flex;
+  height: calc(100dvh - 48px);
+}
+
+.team {
+  flex: 1;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  touch-action: manipulation;
+}
+
+.team.A {
+  background: linear-gradient(#14b8ff, #0b4a8b);
+}
+
+.team.B {
+  background: linear-gradient(#ef4444, #6b0f0f);
+}
+
+/* Tap layer */
+.tap-zone {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* Content */
+.content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+}
+
+.team-name {
+  font-size: 36px;
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+}
+
+.score-row {
+  display: flex;
+  align-items: center;
+}
+
+.score {
+  font-size: 200px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.serve {
+  font-size: 48px;
+  margin-left: 10px;
+}
+
+/* +/- buttons */
+.controls {
+  display: flex;
+  flex-direction: column;
+  margin-right: 12px;
+}
+
+.controls.right {
+  margin-left: 12px;
+  margin-right: 0;
+}
+
+.controls button {
+  width: 28px;
+  height: 64px;
+  font-size: 26px;
+  border-radius: 10px;
+  border: none;
+  margin: 6px 0;
+}
+
+.plus { background: #22c55e; }
+.minus { background: #fb7185; }
+
+.hidden .controls,
+.hidden .topbar {
+  display: none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="topbar">
+  <div class="sets">
+    <button class="active" data-set="0">Set 1</button>
+    <button data-set="1">Set 2</button>
+    <button data-set="2">Set 3</button>
+  </div>
+
+  <div class="actions">
+    <button id="serveBtn">Set First Serve</button>
+    <button id="hideBtn">Hide Buttons</button>
+    <button id="resetBtn">Reset</button>
+  </div>
+</div>
+
+<div class="court" id="app">
+
+  <!-- A TEAM -->
+  <div class="team A" id="teamA">
+    <div class="tap-zone"></div>
+    <div class="content">
+      <div class="team-name">A TEAM</div>
+      <div class="score-row">
+        <div class="controls">
+          <button class="plus" id="Aplus">+</button>
+          <button class="minus" id="Aminus">−</button>
+        </div>
+        <div class="score" id="scoreA">0</div>
+        <div class="serve" id="serveA">🏐</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- B TEAM -->
+  <div class="team B" id="teamB">
+    <div class="tap-zone"></div>
+    <div class="content">
+      <div class="team-name">B TEAM</div>
+      <div class="score-row">
+        <div class="serve" id="serveB"></div>
+        <div class="score" id="scoreB">0</div>
+        <div class="controls right">
+          <button class="plus" id="Bplus">+</button>
+          <button class="minus" id="Bminus">−</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js");
+}
+
+const scores = [
+  {A:0,B:0},
+  {A:0,B:0},
+  {A:0,B:0}
+];
+
+let currentSet = 0;
+let serve = "A";
+
+const scoreA = document.getElementById("scoreA");
+const scoreB = document.getElementById("scoreB");
+const serveA = document.getElementById("serveA");
+const serveB = document.getElementById("serveB");
+const app = document.getElementById("app");
+
+function update() {
+  scoreA.textContent = scores[currentSet].A;
+  scoreB.textContent = scores[currentSet].B;
+  serveA.textContent = serve === "A" ? "🏐" : "";
+  serveB.textContent = serve === "B" ? "🏐" : "";
+}
+
+function add(team) {
+  scores[currentSet][team]++;
+  serve = team;
+  update();
+}
+
+function bindTap(el, fn) {
+  el.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    fn();
+  });
+}
+
+bindTap(document.querySelector("#teamA .tap-zone"), () => add("A"));
+bindTap(document.querySelector("#teamB .tap-zone"), () => add("B"));
+bindTap(scoreA, () => add("A"));
+bindTap(scoreB, () => add("B"));
+
+bindTap(Aplus, () => add("A"));
+bindTap(Bplus, () => add("B"));
+
+bindTap(Aminus, () => {
+  if (scores[currentSet].A > 0) {
+    scores[currentSet].A--;
+    update();
+  }
+});
+bindTap(Bminus, () => {
+  if (scores[currentSet].B > 0) {
+    scores[currentSet].B--;
+    update();
+  }
+});
+
+document.querySelectorAll(".sets button").forEach(btn => {
+  bindTap(btn, () => {
+    document.querySelectorAll(".sets button")
+      .forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentSet = Number(btn.dataset.set);
+    update();
+  });
+});
+
+bindTap(serveBtn, () => {
+  serve = serve === "A" ? "B" : "A";
+  update();
+});
+
+bindTap(resetBtn, () => {
+  scores.forEach(s => { s.A = 0; s.B = 0; });
+  serve = "A";
+  update();
+});
+
+bindTap(hideBtn, () => {
+  app.classList.toggle("hidden");
+});
+
+update();
+</script>
+
+</body>
+</html>

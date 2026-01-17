@@ -2,8 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
+<meta name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="screen-orientation" content="landscape">
+<meta name="x5-orientation" content="landscape">
 <title>Volleyball Scoreboard</title>
 
 <style>
@@ -13,12 +17,18 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-body {
+html, body {
   margin: 0;
+  padding: 0;
   background: #000;
   color: #fff;
   font-family: system-ui, -apple-system;
   overflow: hidden;
+  touch-action: manipulation;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ===== Top Bar ===== */
@@ -28,6 +38,7 @@ body {
   align-items: center;
   padding: 0 8px;
   background: linear-gradient(#111, #000);
+  flex-shrink: 0;
 }
 
 .sets button,
@@ -53,8 +64,8 @@ body {
 
 /* ===== Court ===== */
 .court {
+  flex: 1;
   display: flex;
-  height: calc(100dvh - 48px);
 }
 
 .team {
@@ -66,11 +77,11 @@ body {
 }
 
 .team.A {
-  background: linear-gradient(#14b8ff, #0b4a8b);
+  background: linear-gradient(#14b8ff, #0b4a8b); /* 蓝色队 */
 }
 
 .team.B {
-  background: linear-gradient(#ef4444, #6b0f0f);
+  background: linear-gradient(#ef4444, #6b0f0f); /* 红色队 EVA */
 }
 
 /* Tap zone */
@@ -132,16 +143,10 @@ body {
 
 .plus { background: #22c55e; }
 .minus { background: #fb7185; }
-
-.hidden .controls,
-.hidden .topbar {
-  display: none;
-}
 </style>
 </head>
 
 <body>
-
 <div class="topbar">
   <div class="sets">
     <button class="active" data-set="0">Set 1</button>
@@ -153,7 +158,6 @@ body {
     <button id="editNamesBtn">Edit Team Names</button>
     <button id="serveBtn">Set First Serve</button>
     <button id="swapBtn">Swap Teams</button>
-    <button id="hideBtn">Hide Buttons</button>
     <button id="resetBtn">Reset</button>
   </div>
 </div>
@@ -176,7 +180,7 @@ body {
     </div>
   </div>
 
-  <!-- RED -->
+  <!-- RED (EVA 固定) -->
   <div class="team B">
     <div class="tap-zone" id="tapB"></div>
     <div class="content">
@@ -195,11 +199,20 @@ body {
 </div>
 
 <script>
+/* ===== 数据初始化 ===== */
 const scores = [{A:0,B:0},{A:0,B:0},{A:0,B:0}];
 let currentSet = 0;
 let serve = "B";
 
-/* ===== Update UI ===== */
+/* ===== 锁定真实高度 ===== */
+function lockViewport() {
+  document.body.style.height = window.innerHeight + "px";
+}
+window.addEventListener("resize", lockViewport);
+window.addEventListener("orientationchange", lockViewport);
+lockViewport();
+
+/* ===== 更新界面 ===== */
 function update() {
   scoreA.textContent = scores[currentSet].A;
   scoreB.textContent = scores[currentSet].B;
@@ -208,7 +221,7 @@ function update() {
   updateSetButtons();
 }
 
-/* ===== Update Set Buttons with Leader ===== */
+/* ===== Set 按钮显示领先队名 ===== */
 function updateSetButtons() {
   document.querySelectorAll(".sets button").forEach(btn => {
     const i = Number(btn.dataset.set);
@@ -223,24 +236,23 @@ function updateSetButtons() {
   });
 }
 
-/* ===== Add score ===== */
+/* ===== 添加分数 ===== */
 function add(team) {
   scores[currentSet][team]++;
   serve = team;
   update();
 }
 
-/* Tap scoring */
+/* ===== 点击 / Tap 区 ===== */
 tapA.onclick = () => add("A");
 tapB.onclick = () => add("B");
 scoreA.onclick = () => add("A");
 scoreB.onclick = () => add("B");
 
-/* Plus buttons */
+/* ===== Plus / Minus ===== */
 Aplus.onclick = e => { e.stopPropagation(); add("A"); };
 Bplus.onclick = e => { e.stopPropagation(); add("B"); };
 
-/* Minus buttons */
 Aminus.onclick = e => {
   e.stopPropagation();
   if (scores[currentSet].A > 0) {
@@ -259,20 +271,20 @@ Bminus.onclick = e => {
   update();
 };
 
-/* Serve toggle */
+/* ===== Serve 切换 ===== */
 serveBtn.onclick = () => {
   serve = serve === "A" ? "B" : "A";
   update();
 };
 
-/* Reset */
+/* ===== Reset ===== */
 resetBtn.onclick = () => {
   scores.forEach(s => { s.A = 0; s.B = 0; });
   serve = "B";
   update();
 };
 
-/* Edit team names */
+/* ===== 编辑队名 ===== */
 editNamesBtn.onclick = () => {
   const a = prompt("Blue Team Name:", nameA.textContent);
   if (a && a.trim()) nameA.textContent = a;
@@ -283,7 +295,7 @@ editNamesBtn.onclick = () => {
   update();
 };
 
-/* Set switch */
+/* ===== 切换 Set ===== */
 document.querySelectorAll(".sets button").forEach(btn => {
   btn.onclick = () => {
     document.querySelectorAll(".sets button")
@@ -294,15 +306,12 @@ document.querySelectorAll(".sets button").forEach(btn => {
   };
 });
 
-/* Hide controls */
-hideBtn.onclick = () => {
-  document.body.classList.toggle("hidden");
-};
-
-/* Swap teams */
+/* ===== Swap Teams (颜色固定) ===== */
 swapBtn.onclick = () => {
-  [nameA.textContent, nameB.textContent] =
-    [nameB.textContent, nameA.textContent];
+  // 只交换名字和分数，颜色不动
+  const tempName = nameA.textContent;
+  nameA.textContent = nameB.textContent;
+  nameB.textContent = tempName;
 
   scores.forEach(s => {
     [s.A, s.B] = [s.B, s.A];
@@ -312,8 +321,10 @@ swapBtn.onclick = () => {
   update();
 };
 
+/* ===== 初始化 ===== */
 update();
 </script>
 
 </body>
 </html>
+

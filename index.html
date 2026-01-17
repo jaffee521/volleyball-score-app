@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="screen-orientation" content="landscape">
 <meta name="x5-orientation" content="landscape">
+<link rel="manifest" href="manifest.json">
 <title>Volleyball Scoreboard</title>
 
 <style>
@@ -77,11 +78,11 @@ html, body {
 }
 
 .team.A {
-  background: linear-gradient(#14b8ff, #0b4a8b); /* 蓝色队 */
+  background: linear-gradient(#14b8ff, #0b4a8b);
 }
 
 .team.B {
-  background: linear-gradient(#ef4444, #6b0f0f); /* 红色队 EVA */
+  background: linear-gradient(#ef4444, #6b0f0f);
 }
 
 /* Tap zone */
@@ -308,7 +309,6 @@ document.querySelectorAll(".sets button").forEach(btn => {
 
 /* ===== Swap Teams (颜色固定) ===== */
 swapBtn.onclick = () => {
-  // 只交换名字和分数，颜色不动
   const tempName = nameA.textContent;
   nameA.textContent = nameB.textContent;
   nameB.textContent = tempName;
